@@ -88,11 +88,18 @@ def read_json(path: Path, default: Any = None) -> Any:
 
 
 def write_json_private(path: Path, payload: Any) -> None:
-    """Write JSON atomically with 0600 permissions.
+    """Write JSON atomically, owner-readable only.
 
     The token cache lives here, so the file must never be world-readable — not
-    even transiently, which is why the mode is applied to the temp file before
-    the rename rather than after.
+    even transiently, which is why the mode is applied at ``os.open`` time on the
+    temp file rather than chmod'd after the rename.
+
+    **Windows caveat.** NTFS does not implement POSIX mode bits, and ``os.chmod``
+    there only toggles the read-only flag; the file will report ``0o666``
+    regardless of what we ask for. Confidentiality on Windows comes from the ACL
+    on the user profile directory, which by default grants only the owning user
+    and administrators. This is documented in SECURITY.md rather than papered
+    over, because the guarantee genuinely differs by platform.
     """
     ensure_config_dir()
     tmp = path.with_suffix(path.suffix + ".tmp")

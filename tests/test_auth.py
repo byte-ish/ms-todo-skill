@@ -106,6 +106,11 @@ def test_login_times_out_when_the_code_expires(transport, monkeypatch):
         auth.login(lambda p: None)
 
 
+@pytest.mark.skipif(
+    os.name == "nt",
+    reason="NTFS has no POSIX mode bits; os.chmod only toggles read-only there. "
+    "Windows confidentiality comes from the user-profile ACL — see SECURITY.md.",
+)
 def test_token_file_is_written_0600(transport, monkeypatch):
     auth, _ = make_auth(transport, monkeypatch)
     transport.json("POST", "/devicecode", DEVICE_RESPONSE)
@@ -115,6 +120,20 @@ def test_token_file_is_written_0600(transport, monkeypatch):
 
     mode = stat.S_IMODE(os.stat(token_path()).st_mode)
     assert mode == 0o600, f"token cache must not be readable by others, got {oct(mode)}"
+
+
+def test_token_file_is_written_inside_the_config_dir(transport, monkeypatch, isolated_config):
+    """Platform-independent half of the guarantee: the token never escapes the
+    user-scoped config directory, which is what protects it on Windows."""
+    auth, _ = make_auth(transport, monkeypatch)
+    transport.json("POST", "/devicecode", DEVICE_RESPONSE)
+    transport.json("POST", "/token", TOKEN_RESPONSE)
+
+    auth.login(lambda p: None)
+
+    written = token_path()
+    assert written.is_file()
+    assert written.parent == isolated_config
 
 
 def test_access_token_refreshes_when_close_to_expiry(transport, monkeypatch):

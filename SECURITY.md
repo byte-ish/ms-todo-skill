@@ -15,6 +15,15 @@ it isn't one before any public disclosure.
   directory created **0700**.
 - Writes are atomic: content goes to a temp file that is created with the private
   mode *before* the rename, so the token is never briefly world-readable.
+
+  **On Windows this differs.** NTFS does not implement POSIX mode bits, and
+  `os.chmod` only toggles the read-only flag, so the file reports `0o666` no
+  matter what is requested. Confidentiality there comes from the ACL on your
+  user profile directory, which by default grants access to you and to
+  administrators only. If you keep the config directory somewhere outside your
+  profile on Windows — via `MSTODO_CONFIG_DIR` or `XDG_CONFIG_HOME` — check the
+  ACL yourself, because nothing in this tool will tighten it for you.
+
 - Tokens are never passed as command-line arguments — process arguments are
   visible to every user on the machine via `ps`.
 - Tokens are never logged, not even at `-vv`. Debug logging prints URLs, methods
