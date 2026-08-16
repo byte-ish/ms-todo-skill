@@ -1,0 +1,78 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: pytest (${{ matrix.os }}, py${{ matrix.python-version }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest]
+        python-version: ["3.9", "3.10", "3.11", "3.12", "3.13"]
+        include:
+          # The tool is used interactively on developer laptops, so prove the
+          # entry point and the tz handling work off Linux too.
+          - os: macos-latest
+            python-version: "3.12"
+          - os: windows-latest
+            python-version: "3.12"
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install test dependencies
+        # The package itself has zero runtime dependencies; tzdata is needed
+        # only where the OS ships no zoneinfo database (notably Windows).
+        run: python -m pip install --upgrade pip pytest tzdata
+
+      - name: Run tests
+        run: python -m pytest
+
+      - name: Verify the CLI runs with no install step
+        run: python scripts/todo.py --version
+
+  lint:
+    name: ruff
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python -m pip install --upgrade pip ruff
+      - run: ruff check --output-format=github .
+
+  zero-dependency-check:
+    name: no third-party imports at runtime
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Import and run in a bare interpreter
+        # No pip install anywhere in this job. If someone adds a third-party
+        # import to the package, this fails and the promise stays honest.
+        run: |
+          python scripts/todo.py --help > /dev/null
+          # Signed out must be exit code 3, not a crash. `set -e` is on, so
+          # capture the status rather than letting the non-zero exit kill the step.
+          python scripts/todo.py auth status && rc=0 || rc=$?
+          test "$rc" -eq 3

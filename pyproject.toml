@@ -1,0 +1,81 @@
+[project]
+name = "ms-todo-skill"
+version = "1.0.0"
+description = "Manage Microsoft To Do from the command line (and from Claude) via the Microsoft Graph API"
+readme = "README.md"
+requires-python = ">=3.9"
+license = { text = "MIT" }
+authors = [{ name = "byte-ish" }]
+keywords = ["microsoft-todo", "microsoft-graph", "cli", "tasks", "claude-skill"]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Environment :: Console",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3 :: Only",
+    "Topic :: Office/Business :: Scheduling",
+]
+# Deliberately empty: the whole point is that this runs from a bare python3
+# with no install step, on any machine, including locked-down CI images.
+dependencies = []
+
+[project.optional-dependencies]
+dev = ["pytest>=7.0", "ruff>=0.6"]
+# Only needed on slim Linux images that ship no system tz database.
+tz = ["tzdata"]
+
+[project.urls]
+Homepage = "https://github.com/byte-ish/ms-todo-skill"
+Issues = "https://github.com/byte-ish/ms-todo-skill/issues"
+
+[project.scripts]
+ms-todo = "mstodo.cli:main"
+
+[build-system]
+requires = ["setuptools>=64"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+package-dir = { "" = "scripts" }
+
+[tool.setuptools.packages.find]
+where = ["scripts"]
+include = ["mstodo*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q --strict-markers"
+filterwarnings = ["error::DeprecationWarning"]
+
+[tool.ruff]
+line-length = 110
+target-version = "py39"
+src = ["scripts", "tests"]
+
+[tool.ruff.lint]
+select = [
+    "E",    # pycodestyle
+    "F",    # pyflakes
+    "W",    # warnings
+    "I",    # import sorting
+    "B",    # bugbear
+    "C4",   # comprehensions
+    "UP",   # pyupgrade
+    "SIM",  # simplify
+    "RUF",  # ruff-specific
+]
+ignore = [
+    "E501",    # line length is enforced by the formatter, not the linter
+    "B008",    # function call in default argument — used intentionally for injectable clocks
+    "SIM105",  # contextlib.suppress is not clearer than a two-line try/except here
+]
+
+[tool.ruff.lint.per-file-ignores]
+# Tests are allowed private imports, naive datetimes and long literal fixtures.
+"tests/*" = ["S101", "RUF012"]
+# The entry point guards against interpreters older than the declared floor;
+# ruff reads that as dead code because it trusts target-version.
+"scripts/todo.py" = ["UP036"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["mstodo"]

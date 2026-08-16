@@ -1,0 +1,8 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Setup and authentication help
+    url: https://github.com/byte-ish/ms-todo-skill/blob/main/references/setup.md
+    about: App registration, environment variables and a troubleshooting table — check here first.
+  - name: Security vulnerability
+    url: https://github.com/byte-ish/ms-todo-skill/security/advisories/new
+    about: Report privately. Please do not open a public issue.

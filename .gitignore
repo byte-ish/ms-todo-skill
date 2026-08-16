@@ -1,0 +1,23 @@
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.env
+*.egg-info/
+build/
+dist/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+.DS_Store
+.idea/
+.vscode/
+
+# Never commit credentials or sync state, even if someone points the config
+# directory at the repo.
+config.json
+token.json
+lists-cache.json
+delta-state.json

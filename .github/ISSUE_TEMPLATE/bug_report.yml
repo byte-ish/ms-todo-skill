@@ -1,0 +1,62 @@
+name: Bug report
+description: Something behaves differently from what the docs say
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Before filing: please redact real client ids, tenant ids, task ids and
+        anything token-shaped from the output you paste.
+
+  - type: textarea
+    id: command
+    attributes:
+      label: Command
+      description: The exact command you ran.
+      render: shell
+      placeholder: python3 scripts/todo.py ls --overdue --all-lists
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: What you expected
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: What happened
+      description: Full output, including the exit code. `-vv` adds debug logging and never prints tokens.
+      render: shell
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: Version
+      description: Output of `python3 scripts/todo.py --version`
+    validations:
+      required: true
+
+  - type: input
+    id: python
+    attributes:
+      label: Python version and OS
+      placeholder: "3.11.9 on Ubuntu 24.04"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: account
+    attributes:
+      label: Account type
+      options:
+        - Personal Microsoft account
+        - Work or school account
+        - Not sure
+    validations:
+      required: true

@@ -1,0 +1,32 @@
+name: Feature request
+description: Suggest a capability or an improvement
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: What are you trying to do?
+      description: Describe the task, not the solution — it often has a shorter path.
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: What would you like it to look like?
+      description: A command line, if you have one in mind.
+      render: shell
+
+  - type: textarea
+    id: workaround
+    attributes:
+      label: How are you doing it today?
+      description: Including "not at all", or via `raw`.
+
+  - type: checkboxes
+    id: constraints
+    attributes:
+      label: Constraints
+      options:
+        - label: I understand this project has no runtime dependencies, and the feature must be implementable with the standard library.
+          required: true
