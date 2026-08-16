@@ -51,15 +51,28 @@ Optionally, put it on your `PATH`:
 ln -s "$PWD/scripts/todo.py" ~/.local/bin/todo
 ```
 
-### As a Claude Code skill
+### As a Claude skill
+
+**Claude Code** reads the repo in place. Clone it into your personal skills
+directory and it applies to every project:
 
 ```bash
 git clone https://github.com/byte-ish/ms-todo-skill.git ~/.claude/skills/ms-todo
 ```
 
-Claude picks it up from `SKILL.md` on the next session. Ask it things like
-*"what's overdue?"*, *"add renew passport to my admin list, due Friday"*, or
-*"break the release task into subtasks"*.
+**The Claude app** takes an uploaded bundle instead. Grab `ms-todo.zip` from the
+[latest release](https://github.com/byte-ish/ms-todo-skill/releases/latest), or
+build it yourself with `./package.sh`, then upload it under
+**Settings → Capabilities → Skills**.
+
+Either way, ask Claude things like *"what's overdue?"*, *"add renew passport to
+my admin list, due Friday"*, or *"break the release task into subtasks"*.
+
+> The app runs skills in a sandboxed container, which has neither your cached
+> token nor, in most configurations, outbound access to Microsoft's endpoints.
+> Where egress is blocked the skill cannot function at all; where it is allowed
+> you must sign in once per session, because container storage does not persist.
+> The laptop install has neither limitation.
 
 ## Sign in
 

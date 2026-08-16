@@ -21,3 +21,4 @@ config.json
 token.json
 lists-cache.json
 delta-state.json
+dist/

@@ -42,6 +42,30 @@ refreshed automatically from then on.
 
 **Never** print the token, pass it as a CLI argument, or copy it into a file.
 
+### Where there is no cached token
+
+In a sandbox, container or CI runner the token cache from the user's laptop is
+not present, and `auth status` will exit 3. Two things have to be true before
+anything else can work:
+
+1. **Outbound network access** to `login.microsoftonline.com` and
+   `graph.microsoft.com`. Check it before promising anything:
+
+   ```bash
+   python3 scripts/todo.py --retries 1 raw GET /me/todo/lists
+   ```
+
+   A connection error means the environment is sealed off and this skill cannot
+   function there. Say so plainly rather than retrying — no amount of retrying
+   fixes blocked egress.
+
+2. **A sign-in**, which needs the user to approve a code in their own browser.
+   Run `auth login --client-id <id>`, show them the code and URL, and wait.
+
+Any token acquired this way lives only as long as the sandbox. Tell the user it
+will need repeating next session rather than letting them discover it. If the
+environment offers persistent storage, point `MSTODO_CONFIG_DIR` at it.
+
 ---
 
 ## The commands you will actually use
