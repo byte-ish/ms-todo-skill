@@ -63,9 +63,14 @@ Omitted entirely, it targets the built-in *Tasks* list.
 **Task arguments** accept, in priority order:
 
 1. an exact task id
-2. a unique id prefix
+2. a unique id **fragment** (not a prefix — see below)
 3. an exact title, case-insensitive
 4. a unique title substring
+
+Outlook ids all begin with a long run derived from the mailbox, so every list
+and task in an account can share the first thirty-odd characters. Matching is
+therefore on any *fragment* of the id, and the abbreviated id shown in listings
+is the **tail** — the part that actually varies — so it pastes straight back in.
 
 Anything matching more than one object is exit code 2 with the candidates
 listed. Completed tasks are included in reference resolution even though they are
@@ -187,13 +192,16 @@ field always land last rather than first.
 
 ```
 ST   ID            DUE        !  TITLE              NOTES
-[ ]  AAMkAGI2TGuz  tomorrow   !  Renew passport     reminder #admin 2/5
+[ ]  gDbc8U7HGwAA  tomorrow   !  Renew passport     reminder #admin 2/5
 ```
 
 `ST` is the status glyph: `[ ]` notStarted, `[~]` inProgress, `[x]` completed,
 `[w]` waitingOnOthers, `[>]` deferred. `!` marks high importance, `v` low.
 `NOTES` collects `repeats`, `reminder`, `attach`, a checklist `done/total` when
 `--checklist` is on, and `#category` tags. Overdue titles are red.
+
+The `ID` column shows the id's **tail**. Outlook ids share a long mailbox-derived
+head, so a front-truncated id would read identically on every row.
 
 ---
 

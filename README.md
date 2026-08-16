@@ -10,15 +10,15 @@ Microsoft Graph v1.0 API.
 ```console
 $ todo.py ls --today --all-lists
 ST   ID            LIST    DUE         !  TITLE                 NOTES
-[ ]  AAMkAGI2TGuz  Admin   today       !  Renew passport        reminder #admin
-[~]  AAMkAGI2Wm4x  Work    today          Review PR 412         2/5
-[ ]  AAMkAGI2Qp8v  Home    yesterday      Water the plants      repeats
+[ ]  gDbc8U7HGwAA  Admin   today       !  Renew passport        reminder #admin
+[~]  zPnuBwDit9AA  Work    today          Review PR 412         2/5
+[ ]  xlnrYAAAxQp8  Home    yesterday      Water the plants      repeats
 
 $ todo.py add "Book dentist" --due friday --importance high
-added AAMkAGI2Rr3  Book dentist  → Tasks
+added wm4xPp1CCCAA  Book dentist  → Tasks
 
 $ todo.py done "Book dentist"
-completed AAMkAGI2Rr3  Book dentist
+completed wm4xPp1CCCAA  Book dentist
 ```
 
 **Zero dependencies.** Standard library only — no `pip install`, no virtualenv,
@@ -96,7 +96,7 @@ todo.py raw GET /me/todo/lists                     # escape hatch
 ```
 
 You almost never need an id: `-l` takes a list name or fragment, and task
-arguments take a title, a fragment, or an id prefix. Ambiguity is an error that
+arguments take a title, a fragment, or an id fragment. Ambiguity is an error that
 shows you the candidates.
 
 ### Scripting
@@ -168,7 +168,7 @@ database, `pip install tzdata` for non-UTC timezone support.
 
 ```bash
 python3 -m venv .venv && .venv/bin/pip install -e ".[dev]"
-.venv/bin/python -m pytest      # 202 tests, no network
+.venv/bin/python -m pytest      # no network, no credentials needed
 .venv/bin/ruff check .
 ```
 

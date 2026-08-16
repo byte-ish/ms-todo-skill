@@ -69,7 +69,9 @@ Full reference: `references/api-reference.md`. Worked multi-step workflows:
 
 You rarely need ids. `-l/--list` accepts an id, a display name, a unique name
 fragment, or `default`/`flagged`. A task argument accepts an id, a unique id
-prefix, an exact title, or a unique title fragment. Ambiguity is an error that
+fragment, an exact title, or a unique title fragment. The short id shown in `ls`
+is the id's **tail**, because Outlook ids share a long common head — paste it
+back verbatim and it resolves. Ambiguity is an error that
 lists the candidates — read it and retry with something more specific rather
 than guessing.
 

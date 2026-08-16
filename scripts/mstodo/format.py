@@ -58,9 +58,18 @@ def terminal_width(default: int = 100) -> int:
 
 
 def short_id(value: str | None, width: int = ID_WIDTH) -> str:
+    """Abbreviate an id to its *tail*, which is the part that actually varies.
+
+    Outlook ids all begin with a long run derived from the mailbox — every list
+    and task in an account can share the first 30-odd characters. Truncating
+    from the front therefore renders every row identical and useless. The
+    distinguishing bits live at the end, so that is what gets shown, and
+    reference resolution matches on any unique id fragment so the displayed
+    value can be pasted straight back.
+    """
     if not value:
         return ""
-    return value if len(value) <= width else value[:width]
+    return value if len(value) <= width else value[-width:]
 
 
 def dump_json(payload: Any, *, stream: Any = None) -> None:

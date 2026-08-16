@@ -122,7 +122,7 @@ def test_ambiguous_task_title_raises(transport, signed_in):
         service.resolve_task("list-work", "Buy")
 
 
-def test_task_resolution_by_id_prefix(transport, signed_in):
+def test_task_resolution_by_id_fragment(transport, signed_in):
     service = make_service(transport, signed_in)
     stub_tasks(transport)
     assert service.resolve_task("list-work", "task-b")["title"] == "Buy bread"
@@ -287,3 +287,66 @@ def test_importance_sort_order():
     tasks = [task(importance="low"), task(importance="high"), task(importance="normal")]
     ordered = sorted(tasks, key=lambda t: task_sort_key(t, "importance"))
     assert [t["importance"] for t in ordered] == ["high", "normal", "low"]
+
+
+# ------------------------------------------------ Outlook ids share a prefix
+
+# Real Outlook ids look like this: a long mailbox-derived head that is IDENTICAL
+# across every list and task in the account, with the entropy at the tail.
+OUTLOOK_HEAD = "AQMkADAwATM0MDAAMS0yMDkyLWVjMzYtMDACLTAwCgBGAAAD"
+OUTLOOK_TASKS = [
+    {"id": OUTLOOK_HEAD + "xlnrYAAA=", "title": "Take protein", "status": "notStarted"},
+    {"id": OUTLOOK_HEAD + "qp8vLl2BBB=", "title": "Learn French", "status": "notStarted"},
+    {"id": OUTLOOK_HEAD + "wm4xPp1CCC=", "title": "Vacuum home", "status": "notStarted"},
+]
+
+
+def test_id_prefix_would_be_ambiguous_so_fragments_are_used(transport, signed_in):
+    """Truncating an Outlook id from the front yields the same string for every
+    task, so resolution must match anywhere in the id, not just at the start."""
+    service = make_service(transport, signed_in)
+    transport.json("GET", "/me/todo/lists/list-work/tasks", {"value": OUTLOOK_TASKS}, repeat=True)
+
+    assert service.resolve_task("list-work", "xlnrYAAA=")["title"] == "Take protein"
+    assert service.resolve_task("list-work", "qp8vLl2BBB=")["title"] == "Learn French"
+
+
+def test_the_shared_head_is_reported_as_ambiguous_not_silently_wrong(transport, signed_in):
+    service = make_service(transport, signed_in)
+    transport.json("GET", "/me/todo/lists/list-work/tasks", {"value": OUTLOOK_TASKS}, repeat=True)
+
+    with pytest.raises(AmbiguousReferenceError, match="matches 3 tasks"):
+        service.resolve_task("list-work", OUTLOOK_HEAD[:12])
+
+
+def test_displayed_id_tail_round_trips_back_into_resolution(transport, signed_in):
+    """Whatever `ls` prints must be paste-able straight back in."""
+    from mstodo.format import short_id
+
+    service = make_service(transport, signed_in)
+    transport.json("GET", "/me/todo/lists/list-work/tasks", {"value": OUTLOOK_TASKS}, repeat=True)
+
+    for task in OUTLOOK_TASKS:
+        displayed = short_id(task["id"])
+        assert service.resolve_task("list-work", displayed)["id"] == task["id"]
+
+
+def test_an_ellipsis_pasted_along_with_the_id_is_tolerated(transport, signed_in):
+    service = make_service(transport, signed_in)
+    transport.json("GET", "/me/todo/lists/list-work/tasks", {"value": OUTLOOK_TASKS}, repeat=True)
+
+    assert service.resolve_task("list-work", "…xlnrYAAA=")["title"] == "Take protein"
+
+
+def test_lists_resolve_by_id_fragment_but_names_win(transport, signed_in):
+    service = make_service(transport, signed_in)
+    outlook_lists = [
+        {"id": OUTLOOK_HEAD + "gDbc8U7HGwAA=", "displayName": "Tasks", "wellknownListName": "defaultList"},
+        {"id": OUTLOOK_HEAD + "zPnuBwDit9AA=", "displayName": "Revise", "wellknownListName": "none"},
+    ]
+    stub_lists(transport, outlook_lists)
+
+    assert service.resolve_list("zPnuBwDit9AA=")["displayName"] == "Revise"
+    assert service.resolve_list("Revise")["displayName"] == "Revise"
+    with pytest.raises(AmbiguousReferenceError, match="matches 2 lists"):
+        service.resolve_list(OUTLOOK_HEAD[:20])

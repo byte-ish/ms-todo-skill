@@ -48,6 +48,12 @@ def _q(value: str) -> str:
     return urllib.parse.quote(value, safe="")
 
 
+def _tail(value: Any, width: int = 12) -> str:
+    """Abbreviate an id to its distinguishing tail — see ``format.short_id``."""
+    text = str(value or "")
+    return text if len(text) <= width else text[-width:]
+
+
 class TodoService:
     def __init__(self, client: GraphClient, *, use_cache: bool = True) -> None:
         self.client = client
@@ -126,6 +132,20 @@ class TodoService:
                 [str(i.get("displayName")) for i in partial],
             )
 
+        # Last resort: an id fragment. Names get first refusal because they are
+        # what people type; this exists so the abbreviated id printed by
+        # `lists ls` (the tail) can be pasted back in. Outlook list ids share a
+        # long common head, so this must be a fragment match, not a prefix one.
+        if len(needle) >= 6:
+            by_id = [i for i in lists if needle in str(i.get("id", ""))]
+            if len(by_id) == 1:
+                return by_id[0]
+            if len(by_id) > 1:
+                raise AmbiguousReferenceError(
+                    f"id fragment {ref!r} matches {len(by_id)} lists",
+                    [f"{_tail(i.get('id'))}  {i.get('displayName')}" for i in by_id],
+                )
+
         # The cache may simply be stale — refresh once before giving up.
         if not _retried and self.use_cache:
             return self.resolve_list(ref, _retried=True)
@@ -183,8 +203,14 @@ class TodoService:
         return self.client.get(f"/me/todo/lists/{_q(list_id)}/tasks/{_q(task_id)}", params=params)
 
     def resolve_task(self, list_id: str, ref: str) -> dict[str, Any]:
-        """Resolve a task by exact id, unique id prefix, or title match."""
-        needle = ref.strip()
+        """Resolve a task by exact id, unique id fragment, or title match.
+
+        Id matching is on any *fragment*, not a prefix: Outlook ids share a long
+        mailbox-derived head, so a prefix match would be ambiguous across every
+        task in the account. This is what lets the abbreviated id printed by
+        ``ls`` — which is the tail — be pasted straight back in.
+        """
+        needle = ref.strip().strip("…")
         if not needle:
             raise UsageError("empty task reference")
 
@@ -202,9 +228,9 @@ class TodoService:
             if task.get("id") == needle:
                 return task
 
-        by_prefix = [t for t in candidates if str(t.get("id", "")).startswith(needle)]
-        if len(by_prefix) == 1:
-            return by_prefix[0]
+        by_id = [t for t in candidates if needle in str(t.get("id", ""))]
+        if len(by_id) == 1:
+            return by_id[0]
 
         exact_title = [t for t in candidates if str(t.get("title", "")).lower() == lowered]
         if len(exact_title) == 1:
@@ -212,7 +238,7 @@ class TodoService:
         if len(exact_title) > 1:
             raise AmbiguousReferenceError(
                 f"{len(exact_title)} tasks are titled {ref!r}",
-                [f"{t['id'][:12]}…  {t.get('title')}" for t in exact_title],
+                [f"{_tail(t.get('id'))}  {t.get('title')}" for t in exact_title],
             )
 
         partial = [t for t in candidates if lowered in str(t.get("title", "")).lower()]
@@ -221,12 +247,12 @@ class TodoService:
         if len(partial) > 1:
             raise AmbiguousReferenceError(
                 f"{ref!r} matches {len(partial)} tasks",
-                [f"{t['id'][:12]}…  {t.get('title')}" for t in partial],
+                [f"{_tail(t.get('id'))}  {t.get('title')}" for t in partial],
             )
-        if len(by_prefix) > 1:
+        if len(by_id) > 1:
             raise AmbiguousReferenceError(
-                f"id prefix {ref!r} matches {len(by_prefix)} tasks",
-                [f"{t['id'][:20]}…  {t.get('title')}" for t in by_prefix],
+                f"id fragment {ref!r} matches {len(by_id)} tasks",
+                [f"{_tail(t.get('id'), 20)}  {t.get('title')}" for t in by_id],
             )
 
         raise NotFoundError(f"no task matches {ref!r} in this list", status=404)
