@@ -36,4 +36,10 @@ test -f "$STAGE/scripts/todo.py" || { echo "error: scripts/todo.py missing from 
 ( cd "$OUT" && zip -qr "$NAME.zip" "$NAME" )
 rm -rf "$STAGE"
 
+# Same archive under both extensions. A .skill file *is* a zip, but upload
+# dialogs filter by extension, and a picker that only offers .skill will not
+# show a .zip at all — which looks like a broken package rather than a filter.
+cp "$OUT/$NAME.zip" "$OUT/$NAME.skill"
+
 printf 'built %s (%s)\n' "$OUT/$NAME.zip" "$(du -h "$OUT/$NAME.zip" | cut -f1)"
+printf 'built %s (identical archive, for pickers that expect .skill)\n' "$OUT/$NAME.skill"
