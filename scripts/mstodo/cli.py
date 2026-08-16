@@ -691,6 +691,22 @@ def build_parser() -> argparse.ArgumentParser:
     login = auth.add_parser("login", help="sign in with the device code flow")
     login.add_argument("--save", action="store_true", help="persist client id / tenant / tz to config.json")
     login.add_argument("--force", action="store_true", help="sign in even if a valid token is cached")
+    # These three are global flags, but `auth login --client-id X` is how anyone
+    # would naturally type it, so accept them here as well. argparse.SUPPRESS is
+    # load-bearing: without it an omitted flag would reset the namespace to None
+    # and clobber a value given before the subcommand.
+    login.add_argument(
+        "--client-id", dest="client_id", metavar="ID", default=argparse.SUPPRESS,
+        help="Entra application (client) id",
+    )
+    login.add_argument(
+        "--tenant", dest="tenant", metavar="TENANT", default=argparse.SUPPRESS,
+        help="common, consumers, organizations or a tenant id",
+    )
+    login.add_argument(
+        "--tz", dest="tz", metavar="ZONE", default=argparse.SUPPRESS,
+        help="IANA time zone to store in the config",
+    )
     login.set_defaults(func=cmd_auth_login)
     auth.add_parser("status", help="show the cached identity").set_defaults(func=cmd_auth_status)
     auth.add_parser("logout", help="delete the cached token").set_defaults(func=cmd_auth_logout)

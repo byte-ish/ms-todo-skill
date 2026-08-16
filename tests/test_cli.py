@@ -2,7 +2,7 @@ import json
 
 import pytest
 
-from mstodo.cli import main
+from mstodo.cli import build_parser, main
 
 LISTS = {
     "value": [
@@ -379,3 +379,40 @@ def test_bad_timezone_fails_before_any_request(capsys, transport, signed_in):
     assert code == 2
     assert "unknown time zone" in err
     assert transport.calls == []
+
+
+# ------------------------------------------- credential flags on `auth login`
+
+def test_client_id_and_tenant_accepted_after_the_subcommand(capsys, monkeypatch):
+    """Regression: every doc example writes `auth login --client-id X`, but the
+    flags were originally global-only, so that exact form failed with exit 2."""
+    parser = build_parser()
+    args = parser.parse_args(
+        ["auth", "login", "--client-id", "abc-123", "--tenant", "consumers", "--save"]
+    )
+    assert args.client_id == "abc-123"
+    assert args.tenant == "consumers"
+    assert args.save is True
+
+
+def test_client_id_still_accepted_before_the_subcommand():
+    parser = build_parser()
+    args = parser.parse_args(["--client-id", "abc-123", "auth", "login"])
+    assert args.client_id == "abc-123"
+
+
+def test_omitted_subcommand_flag_does_not_clobber_the_global_one():
+    """argparse.SUPPRESS is what makes this work; without it the subparser
+    default of None would overwrite the value parsed before the subcommand."""
+    parser = build_parser()
+    args = parser.parse_args(["--client-id", "global-id", "--tenant", "common", "auth", "login"])
+    assert args.client_id == "global-id"
+    assert args.tenant == "common"
+
+
+def test_subcommand_flag_wins_over_the_global_one():
+    parser = build_parser()
+    args = parser.parse_args(
+        ["--client-id", "global-id", "auth", "login", "--client-id", "specific-id"]
+    )
+    assert args.client_id == "specific-id"
